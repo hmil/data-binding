@@ -1,0 +1,24 @@
+{
+  "name": "ui-data-binding",
+  "version": "1.0.0",
+  "description": "",
+  "main": "webpack.config.js",
+  "devDependencies": {
+    "@types/react": "^17.0.21",
+    "css-loader": "^6.2.0",
+    "html-webpack-plugin": "^5.3.2",
+    "raw-loader": "^4.0.2",
+    "ts-loader": "^9.2.5",
+    "ts-node": "^10.2.1",
+    "typescript": "^4.4.3",
+    "webpack": "^5.52.1",
+    "webpack-cli": "^4.8.0",
+    "webpack-dev-server": "^4.2.1"
+  },
+  "scripts": {
+    "compile": "ts-node src/svelte/compiler.ts src/svelte/SvelteClock.svelte.tsx && mv src/svelte/SvelteClock.svelte.js src/svelte/SvelteClock.js",
+    "start": "webpack-cli serve"
+  },
+  "author": "Hadrien Milano <hmil.fr>",
+  "license": "MIT"
+}

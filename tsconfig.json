@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "module": "CommonJS",
+        "allowJs": true,
+        "lib": [
+            "dom"
+        ],
+        "jsx": "react"
+    },
+    "include": [
+        "src/**/*.ts"
+    ]
+}
