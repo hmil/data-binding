@@ -15,7 +15,6 @@ export class DeclarativeClock implements DeclarativeComponent {
     init() {
         this.interval = setInterval(() => {
             this.update();
-            refreshDeclarativeComponent(this);
         }, 1000);
     
         this.update();
@@ -56,9 +55,6 @@ export class DeclarativeClock implements DeclarativeComponent {
 
     private update() {
         const now = new Date();
-        this.seconds = updateNeedle(this.seconds, now.getSeconds());
-        this.minutes = updateNeedle(this.minutes, now.getMinutes());
-        this.hours = updateNeedle(this.hours, now.getHours() * 60 + now.getMinutes());
     }
 
 }

@@ -36,8 +36,4 @@ export abstract class ReactComponent<S = {}> implements Component {
 
     abstract state: S;
 
-    setState(s: S) {
-        this.state = s;
-        refreshManager.scheduleRefresh(this);
-    }
 }

@@ -5,7 +5,6 @@ import { createNeedle, needleCssTransform, updateNeedle } from '../utils/time-ut
 
 export const VueClock = createVue({
 
-    anchor: document.createElement('div'),
     interval: undefined as undefined | NodeJS.Timer,
 
     hours: createNeedle(12 * 60),

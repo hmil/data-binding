@@ -3,16 +3,20 @@ import { seq } from '../utils/jsx';
 import * as React from '../utils/jsx';
 import { ReactComponent } from './framework';
 
-export class ReactClock extends ReactComponent<{hours: ClockNeedle; minutes: ClockNeedle; seconds: ClockNeedle}> {
+export class ReactClock extends ReactComponent {
 
     anchor = document.createElement('div');
     private interval?: NodeJS.Timer;
 
     readonly state = {
-        hours: createNeedle(12 * 60),
-        minutes: createNeedle(60),
-        seconds: createNeedle(60)
+        // hours: createNeedle(12 * 60),
+        // minutes: createNeedle(60),
+        // seconds: createNeedle(60)
     };
+
+    private hours = createNeedle(12 * 60);
+    private minutes = createNeedle(60);
+    private seconds = createNeedle(60);
 
 
     init() {
@@ -37,11 +41,11 @@ export class ReactClock extends ReactComponent<{hours: ClockNeedle; minutes: Clo
             </g>
             <text x="-20" y="50" fill="#000" fontFamily="helvetica" fontSize="13px">React.</text>
             {/* hours needle */}
-            <path d="M -20 -5 L -20 5 L 75 4.5 L 75 -4.5 Z" fill="#000" style={{transform: needleCssTransform(this.state.hours), transition: `transform 200ms cubic-bezier(0.32, 0.14, 0.31, 1.47)`}} />
+            <path d="M -20 -5 L -20 5 L 75 4.5 L 75 -4.5 Z" fill="#000" style={{transform: needleCssTransform(this.hours), transition: `transform 200ms cubic-bezier(0.32, 0.14, 0.31, 1.47)`}} />
             {/* minutes needle */}
-            <path d="M -20 -5 L -20 5 L 98 4 L 98 -4 Z" fill="#000" style={{transform: needleCssTransform(this.state.minutes), transition: `transform 250ms cubic-bezier(0.32, 0.14, 0.31, 1.47)`}} />`;
+            <path d="M -20 -5 L -20 5 L 98 4 L 98 -4 Z" fill="#000" style={{transform: needleCssTransform(this.minutes), transition: `transform 250ms cubic-bezier(0.32, 0.14, 0.31, 1.47)`}} />`;
             {/* seconds needle */}
-            <g style={{ transform: needleCssTransform(this.state.seconds), transition: `transform 200ms cubic-bezier(0.32, 0.14, 0.31, 1.47)` }}>
+            <g style={{ transform: needleCssTransform(this.seconds), transition: `transform 200ms cubic-bezier(0.32, 0.14, 0.31, 1.47)` }}>
                 <circle cx="0" cy="0" r="2" fill="#de1721" />
                 <circle cx="78" cy="0" r="7" fill="#de1721" />
                 <rect x="-20" y="-1" width="100" height="2" fill="#de1721" />
@@ -58,11 +62,16 @@ export class ReactClock extends ReactComponent<{hours: ClockNeedle; minutes: Clo
 
     private update() {
         const now = new Date();
-        this.setState({
-            seconds: updateNeedle(this.state.seconds, now.getSeconds()),
-            minutes: updateNeedle(this.state.minutes, now.getMinutes()),
-            hours: updateNeedle(this.state.hours, now.getHours() * 60 + now.getMinutes())
-        });
+
+        this.seconds = updateNeedle(this.seconds, now.getSeconds());
+        this.minutes = updateNeedle(this.minutes, now.getMinutes());
+        this.hours = updateNeedle(this.hours, now.getHours() * 60 + now.getMinutes());
+
+        // this.setState({
+        //     seconds: updateNeedle(this.state.seconds, now.getSeconds()),
+        //     minutes: updateNeedle(this.state.minutes, now.getMinutes()),
+        //     hours: updateNeedle(this.state.hours, now.getHours() * 60 + now.getMinutes())
+        // });
     }
 
 }

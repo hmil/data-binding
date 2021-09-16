@@ -49,7 +49,6 @@ export class ImperativeClock implements Component {
     create(anchor: HTMLElement) {
         this.interval = setInterval(() => {
             this.update();
-            this.render();
         }, 1000);
 
         const myId = Math.floor(Math.random() * 1000).toString();
@@ -68,17 +67,10 @@ export class ImperativeClock implements Component {
 
     private update() {
         const now = new Date();
-        this.seconds = updateNeedle(this.seconds, now.getSeconds());
-        this.minutes = updateNeedle(this.minutes, now.getMinutes());
-        this.hours = updateNeedle(this.hours, now.getHours() * 60 + now.getMinutes());
     }
 
     private render() {
         if (!this.elements) return;
-
-        this.elements.hours.style.transform = needleCssTransform(this.hours);
-        this.elements.minutes.style.transform = needleCssTransform(this.minutes);
-        this.elements.seconds.style.transform = needleCssTransform(this.seconds);
     }
 
     destroy() {
