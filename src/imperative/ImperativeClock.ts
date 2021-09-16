@@ -66,13 +66,6 @@ export class ImperativeClock implements Component {
         this.render();
     }
 
-    destroy() {
-        if (this.interval) {
-            clearInterval(this.interval);
-            this.interval = undefined;
-        }
-    }
-
     private update() {
         const now = new Date();
         this.seconds = updateNeedle(this.seconds, now.getSeconds());
@@ -86,6 +79,13 @@ export class ImperativeClock implements Component {
         this.elements.hours.style.transform = needleCssTransform(this.hours);
         this.elements.minutes.style.transform = needleCssTransform(this.minutes);
         this.elements.seconds.style.transform = needleCssTransform(this.seconds);
+    }
+
+    destroy() {
+        if (this.interval) {
+            clearInterval(this.interval);
+            this.interval = undefined;
+        }
     }
 }
 

@@ -7,20 +7,20 @@ const generateElementId = (() => {
     return () => `$$element${count++}`;
 })();
 
-interface Mutation {
+interface PropertyAccess {
     elementId: string;
     attribute: string;
     properties: string[];
     expression: ts.Expression;
 }
-const mutations: Array<Mutation> = [];
+const accesses: Array<PropertyAccess> = [];
 
 function analyzeComponentClass(component: ts.ClassDeclaration, context: ts.TransformationContext): ts.VisitResult<ts.Node> {
 
     let jsxPath: Array<string | number> = [];
     let memberUsages: string[] = [];
     let currentAttribute: null | string;
-    let pendingMutations: Array<Mutation> = [];
+    let pendingAccesses: Array<PropertyAccess> = [];
 
     function jsxAttributeVisitor(node: ts.Node): ts.VisitResult<ts.Node> {
         if (ts.isPropertyAccessExpression(node) &&
@@ -38,7 +38,7 @@ function analyzeComponentClass(component: ts.ClassDeclaration, context: ts.Trans
             const ret = ts.visitNode(node.initializer, jsxAttributeVisitor);
 
             if (memberUsages.length > 0 && node.initializer.expression != null) {
-                pendingMutations.push({
+                pendingAccesses.push({
                     elementId: '',
                     attribute: currentAttribute,
                     expression: node.initializer.expression,
@@ -54,33 +54,21 @@ function analyzeComponentClass(component: ts.ClassDeclaration, context: ts.Trans
 
     function createElementSaveExpression(wrapped: ts.Expression, factory: ts.NodeFactory): ts.Expression {
         const id = generateElementId();
-        mutations.push(...pendingMutations.map(m => { m.elementId = id; return m}));
-        pendingMutations = [];
+        accesses.push(...pendingAccesses.map(m => { m.elementId = id; return m}));
+        pendingAccesses = [];
 
-        return factory.createJsxExpression(undefined, factory.createCallExpression(
-            factory.createParenthesizedExpression(
-                factory.createArrowFunction(
-                    /* modifiers */ [],
-                    /* typeParameters */ [],
-                    [ factory.createParameterDeclaration([], [], undefined, '$$el')],
-                    undefined,
-                    undefined,
-                    factory.createBinaryExpression(
-                        factory.createElementAccessExpression(factory.createToken(ts.SyntaxKind.ThisKeyword), factory.createStringLiteral(id)),
-                        factory.createToken(ts.SyntaxKind.EqualsToken),
-                        factory.createIdentifier('$$el')
-                    )
-                )),
-                [], [
-                    wrapped
-                ]
+        return factory.createJsxExpression(undefined, factory.createParenthesizedExpression(
+            factory.createBinaryExpression(
+                factory.createElementAccessExpression(factory.createToken(ts.SyntaxKind.ThisKeyword), factory.createStringLiteral(id)),
+                factory.createToken(ts.SyntaxKind.EqualsToken),
+                wrapped
             )
-        );
+        ));
     }
 
     function visitJsxOpeningElement(node: ts.JsxOpeningLikeElement): boolean {
         ts.visitEachChild(node.attributes, jsxAttributesVisitor, context);
-        return pendingMutations.length > 0;
+        return pendingAccesses.length > 0;
     }
 
     const renderVisitor = (node: ts.Node): ts.VisitResult<ts.Node> => {
@@ -154,7 +142,7 @@ function createMarkDirtyCall({factory}: ts.TransformationContext) {
     )
 }
 
-function createGenericStyleMutationStatement(mutation: Mutation, factory: ts.NodeFactory): ts.Statement {
+function createGenericStyleMutationStatement(mutation: PropertyAccess, factory: ts.NodeFactory): ts.Statement {
     return factory.createExpressionStatement(
         factory.createCallExpression(
             factory.createPropertyAccessExpression(
@@ -217,7 +205,7 @@ function createStylePropertyName(name: ts.PropertyName, factory: ts.NodeFactory)
     throw new Error('Unsupported style key');
 }
 
-function createStyleMutationStatement(mutation: Mutation, factory: ts.NodeFactory): ts.Statement {
+function createStyleMutationStatement(mutation: PropertyAccess, factory: ts.NodeFactory): ts.Statement {
     if (ts.isObjectLiteralExpression(mutation.expression)) {
         return factory.createBlock(mutation.expression.properties.map(property => {
             if (!ts.isPropertyAssignment(property)) {
@@ -247,7 +235,7 @@ function createStyleMutationStatement(mutation: Mutation, factory: ts.NodeFactor
     }
 }
 
-function createAttributeMutationStatement(mutation: Mutation, factory: ts.NodeFactory): ts.Statement {
+function createAttributeMutationStatement(mutation: PropertyAccess, factory: ts.NodeFactory): ts.Statement {
     return factory.createExpressionStatement(
         factory.createCallExpression(
             factory.createPropertyAccessExpression(
@@ -265,7 +253,7 @@ function createAttributeMutationStatement(mutation: Mutation, factory: ts.NodeFa
     );
 }
 
-function createMutationStatement(mutation: Mutation, factory: ts.NodeFactory): ts.Statement {
+function createMutationStatement(mutation: PropertyAccess, factory: ts.NodeFactory): ts.Statement {
     if (mutation.attribute === 'style') {
         return createStyleMutationStatement(mutation, factory);
     } else {
@@ -285,7 +273,7 @@ function createRefreshMethod(factory: ts.NodeFactory): ts.MethodDeclaration {
         /* typeParameters */ [],
         /* parameters */ [],
         factory.createToken(ts.SyntaxKind.VoidKeyword),
-        factory.createBlock(mutations.map(mutation => createMutationStatement(mutation, factory)))
+        factory.createBlock(accesses.map(mutation => createMutationStatement(mutation, factory)))
     );
 }
 
@@ -301,7 +289,7 @@ function transformComponentClass(component: ts.ClassDeclaration, context: ts.Tra
         }
         if (ts.isExpressionStatement(node) && ts.isBinaryExpression(node.expression) && isThisPropertyAccessExpression(node.expression.left)) {
             const memberName = node.expression.left.name.getText();
-            if (mutations.some(m => m.properties.includes(memberName))) {
+            if (accesses.some(m => m.properties.includes(memberName))) {
                 console.log(`Detected a mutation of render property ${memberName} in ${functionContext.join('.')}`);
                 return [node, createMarkDirtyCall(context)];
             }
