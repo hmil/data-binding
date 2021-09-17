@@ -9,6 +9,18 @@ const anchors = new WeakMap<VueComponent, HTMLElement>();
 
 const dataDependencies = new WeakMap<VueModel, Map<string | Symbol, Set<VueComponent>>>();
 
+function markModelUsage(component: VueComponent, model: any, property: string | symbol) {
+    const bucket = dataDependencies.get(model) ?? new Map<string, Set<VueComponent>>();
+    const views = bucket.get(property) ?? new Set();
+    views.add(component);
+    bucket.set(property, views);
+    dataDependencies.set(model, bucket);
+}
+
+function getViewsUsingThisProperty(model: any, property: string | symbol) {
+    return dataDependencies.get(model)?.get(property);
+}
+
 let activeComponentRender: VueComponent | null = null;
 
 export function createVue<T extends VueDefinition>(definition: T): { newInstance(): VueComponent } {
@@ -23,16 +35,12 @@ export function createVue<T extends VueDefinition>(definition: T): { newInstance
                 get(target: T, p: string | symbol, receiver: any): any {
                     if (activeComponentRender != null) {
                         console.log(`[Vue] Property ${String(p)} was consumed while a component was rendered`);
-                        const bucket = dataDependencies.get(target) ?? new Map<string, Set<VueComponent>>();
-                        const views = bucket.get(p) ?? new Set();
-                        views.add(activeComponentRender);
-                        bucket.set(p, views);
-                        dataDependencies.set(target, bucket);
+                        markModelUsage(activeComponentRender, target, p);
                     }
                     return Reflect.get(target, p, receiver);
                 },
                 set(target: T, p: string | symbol, value: any, receiver: any): boolean {
-                    dataDependencies.get(target)?.get(p)?.forEach(view => {
+                    getViewsUsingThisProperty(target, p)?.forEach(view => {
                         console.log(`[Vue] Scheduling a refresh because property ${String(p)} was modified`);
                         refreshManager.scheduleRefresh(view);
                     });
